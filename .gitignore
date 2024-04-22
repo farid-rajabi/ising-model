@@ -1,3 +1,4 @@
-/photos
-/.ipynb_checkpoints
-/outputs/.ipynb_checkpoints
+photos
+.ipynb_checkpoints
+outputs/.ipynb_checkpoints
+.vscode/settings.json
