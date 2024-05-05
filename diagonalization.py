@@ -13,8 +13,7 @@ class Diagonalization:
         epsilon: (int | float) = 0,
         T: (int | float) = 0,
         delta_epsilon: float = 0.001,
-        delta_T: float = 0.001,
-        BC_type: str = 'PBC'
+        delta_T: float = 0.001
 
     ):
         self.lattice_shape = lattice_shape
@@ -26,7 +25,6 @@ class Diagonalization:
         self.T = T
         self.delta_epsilon = delta_epsilon
         self.delta_T = delta_T
-        self.BC_type = BC_type
 
         self.eig_vals, self.E_0, self.psi_0 = self.eigens()
 
@@ -107,11 +105,6 @@ class Diagonalization:
         J : int or float
             The exchange energy.
 
-        BC_type : str
-            Type of the boundary conditions:
-            'PBC' (Periodic Boundary Condition), # TODO: Format the list.
-            'APBC' (Anti-Periodic Boundary Condition).
-
         Returns
         -------
         csr_matrix # TODO: the class of output.
@@ -121,94 +114,45 @@ class Diagonalization:
         Raises
         ------
         Exception
-            BC_type is not chosen correctly. The neighboring site on the
-            boundaries of the lattice was not found (or incorrect index).
+            The neighboring site on the boundaries of the lattice was
+            not found (or incorrect index).
         """
         A_ops = self.A_operators()
         # Creating the Hamiltonian
         H = sparse.dia_matrix((2**(self.N_i*self.N_j),
                                2**(self.N_i*self.N_j)),
                               dtype=float)
-        # Choosing the type of the BC
-        match self.BC_type:
-            case 'PBC':
-                for i in range(self.N_i):
-                    for j in range(self.N_j):
-                        H += self.epsilon * A_ops[i, j]
-                        # Neighbors on the same row
-                        for index in [j+1, j-1]:
-                            # If index is (i, -1), there will be no problem
-                            try:
-                                H += 0.5 * self.J * \
-                                    (A_ops[i, j] @ A_ops[i, index])
-                            # IndexError means that the index is out of bound,
-                            # so index 0 should be used.
-                            except IndexError:
-                                try:
-                                    H += 0.5 * self.J * \
-                                        (A_ops[i, j] @ A_ops[i, 0])
-                                except:
-                                    raise Exception('failed to find element \
-                                    ({:.0f},{:.0f}) in A_ops'.format(i, index))
-                        # Neighbors on the same column
-                        for index in [i+1, i-1]:
-                            # If index is (-1, j), there will be no problem
-                            try:
-                                H += 0.5 * self.J * \
-                                    (A_ops[i, j] @ A_ops[index, j])
-                            # IndexError means that the index is out of bound,
-                            # so index 0 should be used.
-                            except IndexError:
-                                try:
-                                    H += 0.5 * self.J * \
-                                        (A_ops[i, j] @ A_ops[0, j])
-                                except:
-                                    raise Exception('failed to find element \
-                                    ({:.0f},{:.0f}) in A_ops'.format(index, j))
-            case 'APBC':
-                for i in range(self.N_i):
-                    for j in range(self.N_j):
-                        H += self.epsilon * A_ops[i, j]
-                        # Neighbors on the same row
-                        for index in [j+1, j-1]:
-                            # If index is (i, -1), there will be no problem
-                            try:
-                                if index == -1:
-                                    H += 0.5 * self.J * \
-                                        (A_ops[i, j] @ (-A_ops[i, -1]))
-                                else:
-                                    H += 0.5 * self.J * \
-                                        (A_ops[i, j] @ A_ops[i, index])
-                            # IndexError means that the index is out of bound,
-                            # so index 0 should be used.
-                            except IndexError:
-                                try:
-                                    H += 0.5 * self.J * \
-                                        (A_ops[i, j] @ (-A_ops[i, 0]))
-                                except:
-                                    raise Exception('failed to find element \
-                                    ({:.0f},{:.0f}) in A_ops'.format(i, index))
-                        # Neighbors on the same column
-                        for index in [i+1, i-1]:
-                            # If index is (-1, j), there will be no problem
-                            try:
-                                if index == -1:
-                                    H += 0.5 * self.J * \
-                                        (A_ops[i, j] @ (-A_ops[-1, j]))
-                                else:
-                                    H += 0.5 * self.J * \
-                                        (A_ops[i, j] @ A_ops[index, j])
-                            # IndexError means that the index is out of bound,
-                            # so index 0 should be used.
-                            except IndexError:
-                                try:
-                                    H += 0.5 * self.J * \
-                                        (A_ops[i, j] @ (-A_ops[0, j]))
-                                except:
-                                    raise Exception('failed to find element \
-                                    ({:.0f},{:.0f}) in A_ops'.format(index, j))
-            case default:
-                raise Exception('BC_type is not correctly defined')
+        # There used to be a BC_type variable used in a match clause,
+        # but it had been causing issue.
+        for i in range(self.N_i):
+            for j in range(self.N_j):
+                H += self.epsilon * A_ops[i, j]
+                # Neighbors on the same row
+                for index in [j+1, j-1]:
+                    # If index is (i, -1), there will be no problem
+                    try:
+                        H += 0.5 * self.J * (A_ops[i, j] @ A_ops[i, index])
+                    # IndexError means that the index is out of bound,
+                    # so index 0 should be used.
+                    except IndexError:
+                        try:
+                            H += 0.5 * self.J * (A_ops[i, j] @ A_ops[i, 0])
+                        except:
+                            raise Exception('failed to find element \
+                                ({:.0f},{:.0f}) in A_ops'.format(i, index))
+                # Neighbors on the same column
+                for index in [i+1, i-1]:
+                    # If index is (-1, j), there will be no problem
+                    try:
+                        H += 0.5 * self.J * (A_ops[i, j] @ A_ops[index, j])
+                    # IndexError means that the index is out of bound,
+                    # so index 0 should be used.
+                    except IndexError:
+                        try:
+                            H += 0.5 * self.J * (A_ops[i, j] @ A_ops[0, j])
+                        except:
+                            raise Exception('failed to find element \
+                                ({:.0f},{:.0f}) in A_ops'.format(index, j))
         return H
 
     def eigens(self):  # TODO: find the class of H_op.
@@ -411,9 +355,6 @@ class Diagonalization:
         N_i (int): number of rows
         N_j (int): number of columns
         k_B (float): Boltzman's constant
-        BC_type (str): type of the boundary conditions:
-            'PBC' (Periodic Boundary Condition),
-            'APBC' (Anti-Periodic Boundary Condition).
         epsilon (float): intensity of the magnetic field
         delta_epsilon (float): differentiation step
         J (float): exchange energy
@@ -430,8 +371,7 @@ class Diagonalization:
                                     epsilon=self.epsilon+self.delta_epsilon,
                                     T=self.T,
                                     delta_epsilon=self.delta_epsilon,
-                                    delta_T=self.delta_T,
-                                    BC_type=self.BC_type)
+                                    delta_T=self.delta_T)
         eig_vals_2 = lattice_2.eig_vals
         # Passing eigenvalues to the partition function and calculating F
         F_1 = self.helmholtz()
