@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from traitlets import default
 
 
 class MonteCarlo:
@@ -109,7 +108,7 @@ class MonteCarlo:
         """
         if E_flip < 0:
             return True
-        elif np.random.ranf() < np.exp(-E_flip / (self.k_B * self.T)):
+        elif np.random.ranf() <= np.exp(-E_flip / (self.k_B * self.T)):
             return True
         else:
             return False
@@ -126,26 +125,20 @@ class MonteCarlo:
             The type of boundary condition applied on the lattice.
             [Periodic: `PBC`, Anti-periodic: `APBC`]
         """
-        match BC:
-            case 'PBC':
-                for n_i in range(self.dimen[0]):
-                    for n_j in range(self.dimen[1]):
-                        spin_ij = self.lattice[n_i, n_j]
-                        spin_neighbor = []
-                        spin_neighbor.append(self.lattice[n_i, n_j-1])
-                    spin_neighbor.append(self.lattice[n_i-1, n_j])
-                    try:
-                        spin_neighbor.append(self.lattice[n_i, n_j+1])
-                    except:
-                        spin_neighbor.append(self.lattice[n_i, 0])
-                    try:
-                        spin_neighbor.append(self.lattice[n_i+1, n_j])
-                    except:
-                        spin_neighbor.append(self.lattice[0, n_j])
-                    if self.flip_decider(self.E_flip(spin_ij,
-                                                     np.array(spin_neighbor))):
-                        self.lattice[n_i, n_j] *= -1
-            case 'APBC':
-                pass
-            case default:
-                pass
+        # ! USING match RESULTS IN ERROR
+        for n_i in range(self.dimen[0]):
+            for n_j in range(self.dimen[1]):
+                spin_ij = self.lattice[n_i, n_j]
+                spin_neighbor = []
+                spin_neighbor.append(self.lattice[n_i, n_j-1])
+                spin_neighbor.append(self.lattice[n_i-1, n_j])
+                try:
+                    spin_neighbor.append(self.lattice[n_i, n_j+1])
+                except:
+                    spin_neighbor.append(self.lattice[n_i, 0])
+                try:
+                    spin_neighbor.append(self.lattice[n_i+1, n_j])
+                except:
+                    spin_neighbor.append(self.lattice[0, n_j])
+                if self.flip_decider(self.E_flip(spin_ij, np.array(spin_neighbor))):
+                    self.lattice[n_i, n_j] *= -1
