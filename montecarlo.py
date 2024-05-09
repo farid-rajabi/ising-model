@@ -113,17 +113,8 @@ class MonteCarlo:
         else:
             return False
 
-    def sweep(
-        self,
-        BC: str = 'PBC'
-    ):  # TODO: Add BC arg.
+    def sweep(self):
         """Sweep the whole lattice once.
-
-        Parameters
-        ----------
-        BC : str
-            The type of boundary condition applied on the lattice.
-            [Periodic: `PBC`, Anti-periodic: `APBC`]
         """
         # ! USING match RESULTS IN ERROR
         for n_i in range(self.dimen[0]):
@@ -142,3 +133,33 @@ class MonteCarlo:
                     spin_neighbor.append(self.lattice[0, n_j])
                 if self.flip_decider(self.E_flip(spin_ij, np.array(spin_neighbor))):
                     self.lattice[n_i, n_j] *= -1
+
+    def magnetization(
+        self,
+        n: int = 1
+    ) -> float:
+        """Return the average magnetization of the lattice over `n`
+        sweeps.
+
+        Parameters
+        ----------
+        n : int, optional # TODO: check optional parameter doc format.
+            The number of the repetition of the sweep.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        Exception
+        """
+        n = int(n)
+        if n < 1:
+            raise Exception('\'n\' should be a positive integer larger \
+                than 0.')
+        M = 0
+        for _ in range(n):
+            self.sweep()
+            M += self.summary()[2]
+        return M / n
