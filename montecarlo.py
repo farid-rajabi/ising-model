@@ -9,15 +9,33 @@ class MonteCarlo:
 
     Monte Carlo class assists with applying the Metropolis algorithm on
     the given lattice.
+
+    Parameters
+    ----------
+    lattice : ndarray
+        An array representing the spin in each site.
+    J : int or float or ndarray, default=1
+        # TODO: find the name.
+    epsilon : int or float, default=0
+        # TODO: find the name.
+    k_B : int or float, default=1
+        Boltzman's constant.
+    T : int or float, default=0
+        Temperature of the system.
+
+    Attributes
+    ----------
+    dimen : tuple of [int, int]
+        Shape of the lattice.
     """
 
     def __init__(
         self,
         lattice: np.ndarray,
         J: (int | float | np.ndarray) = 1,
-        epsilon: float = 0,
-        k_B: float = 1,
-        T: float = 0
+        epsilon: (int | float) = 0,
+        k_B: (int | float) = 1,
+        T: (int | float) = 0
     ) -> None:
         self.lattice = lattice
         self.dimen = lattice.shape
@@ -31,7 +49,7 @@ class MonteCarlo:
 
         Returns
         -------
-            tuple[int, int, int]
+            tuple of [int, int, int]
                 The number of positive spins, the number of negative
                 spins, and the total spin.
         """
@@ -65,18 +83,16 @@ class MonteCarlo:
     ) -> (int | float):
         """Return the energy required to flip the spin.
 
-        The energy required of the spin in its current state is:
-            :math:`E_1 = J Σ s_{ij} s_{ij neighbor + ε s_{ij}`.
-        But if it be flipped, the energy becomes
-            :math:`E_2 = - E_1`.
-        The flipped energy is
-            :math:`E_flip = E_2 - E_1 = -2 E_1`.
+        The `coord` parameter can be used in the overriden functions
+        when the `J` parameter depends on the coordinates of the site.
 
         Parameters
         ----------
+        coord : tuple of [int, int]
+            The coordinates of the site for which the flip energy will be
+            calculated.
         site_spin : int or float
             The spin of the site for which E_flip is being calculated.
-
         neighbor_spin : ndarray
             The list-like object containing the spin of the neighboring
             sites.
@@ -85,6 +101,15 @@ class MonteCarlo:
         -------
         int or float
             The flipping energy of the spin.
+
+        Notes
+        -----
+        The energy required of the spin in its current state is
+            :math:`E_1 = J Σ s_{ij} s_{ij neighbor + ε s_{ij}`.
+        But if it be flipped, the energy becomes
+            :math:`E_2 = - E_1`.
+        The flipped energy is
+            :math:`E_flip = E_2 - E_1 = -2 E_1`.
         """
         return -2 * (site_spin * (self.J * neighbor_spin).sum() +
                      self.epsilon * site_spin)
@@ -119,6 +144,18 @@ class MonteCarlo:
         BC: str
     ):
         """Sweep the whole lattice once.
+
+        Parameters
+        ----------
+        BC : {'OBC', 'PBC'}
+            The boundary condition of the lattice.
+            It can get values of `OBC` as open boundary condition or
+            `PBC` as periodic boundary condition.
+
+        Raises
+        ------
+        Exception
+            The boundary condition is set neither `OBC` nor `PBC`.
         """
         # ! USING match RESULTS IN ERROR
         if BC == 'OBC':
@@ -193,16 +230,21 @@ class MonteCarlo:
 
         Parameters
         ----------
-        n : int, optional # TODO: check optional parameter doc format.
+        n : int, default=1
             The number of the repetition of the sweep.
+        BC : str default=`PBC`
+            The boundary condition used for assigning the neighboring
+            sites.
 
         Returns
         -------
         float
+            The average value of the magnetization.
 
         Raises
         ------
         Exception
+            The number of sweeps cannot be less than 1.
         """
         n = int(n)
         if n < 1:
