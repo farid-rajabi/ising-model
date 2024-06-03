@@ -14,7 +14,7 @@ class MonteCarlo:
     def __init__(
         self,
         lattice: np.ndarray,
-        J: float = 1,
+        J: (int | float | np.ndarray) = 1,
         epsilon: float = 0,
         k_B: float = 1,
         T: float = 0
@@ -59,6 +59,7 @@ class MonteCarlo:
 
     def E_flip(
         self,
+        coord: tuple[int, int],
         site_spin: (int | float),
         neighbor_spin: np.ndarray
     ) -> (int | float):
@@ -85,7 +86,7 @@ class MonteCarlo:
         int or float
             The flipping energy of the spin.
         """
-        return -2 * (self.J * site_spin * neighbor_spin.sum() +
+        return -2 * (site_spin * (self.J * neighbor_spin).sum() +
                      self.epsilon * site_spin)
 
     def flip_decider(
@@ -113,30 +114,79 @@ class MonteCarlo:
         else:
             return False
 
-    def sweep(self):
+    def sweep(
+        self,
+        BC: str
+    ):
         """Sweep the whole lattice once.
         """
         # ! USING match RESULTS IN ERROR
-        for n_i in range(self.dimen[0]):
-            for n_j in range(self.dimen[1]):
-                spin_ij = self.lattice[n_i, n_j]
-                spin_neighbor = []
-                spin_neighbor.append(self.lattice[n_i, n_j-1])
-                spin_neighbor.append(self.lattice[n_i-1, n_j])
-                try:
-                    spin_neighbor.append(self.lattice[n_i, n_j+1])
-                except:
-                    spin_neighbor.append(self.lattice[n_i, 0])
-                try:
-                    spin_neighbor.append(self.lattice[n_i+1, n_j])
-                except:
-                    spin_neighbor.append(self.lattice[0, n_j])
-                if self.flip_decider(self.E_flip(spin_ij, np.array(spin_neighbor))):
-                    self.lattice[n_i, n_j] *= -1
+        if BC == 'OBC':
+            for n_i in range(self.dimen[0]):
+                for n_j in range(self.dimen[1]):
+                    spin_ij = self.lattice[n_i, n_j]
+                    spin_neighbor = []
+                    # Left neighbor
+                    if n_j == 0:
+                        # Set the spin of the left neighbor equal to zero,
+                        # because we want to impact from beyond the closed
+                        # boundaries.
+                        spin_neighbor.append(0)
+                    else:
+                        spin_neighbor.append(self.lattice[n_i, n_j-1])
+                    # Right neighbor
+                    if n_j == (self.dimen[1] - 1):
+                        spin_neighbor.append(0)
+                    else:
+                        spin_neighbor.append(self.lattice[n_i, n_j+1])
+                    # Up neighbor
+                    if n_i == 0:
+                        spin_neighbor.append(0)
+                    else:
+                        spin_neighbor.append(self.lattice[n_i-1, n_j])
+                    # Down neighbor
+                    if n_i == (self.dimen[0] - 1):
+                        spin_neighbor.append(0)
+                    else:
+                        spin_neighbor.append(self.lattice[n_i+1, n_j])
+                    # Deciding whether to flip or not
+                    flip_energy = self.E_flip((n_i, n_j),
+                                              spin_ij,
+                                              np.array(spin_neighbor))
+                    if self.flip_decider(flip_energy):
+                        self.lattice[n_i, n_j] *= -1
+        elif BC == 'PBC':
+            for n_i in range(self.dimen[0]):
+                for n_j in range(self.dimen[1]):
+                    spin_ij = self.lattice[n_i, n_j]
+                    spin_neighbor = []
+                    # Left neighbor
+                    spin_neighbor.append(self.lattice[n_i, n_j-1])
+                    # Right neighbor
+                    try:
+                        spin_neighbor.append(self.lattice[n_i, n_j+1])
+                    except:
+                        spin_neighbor.append(self.lattice[n_i, 0])
+                    # Up neighbor
+                    spin_neighbor.append(self.lattice[n_i-1, n_j])
+                    # Down neighbor
+                    try:
+                        spin_neighbor.append(self.lattice[n_i+1, n_j])
+                    except:
+                        spin_neighbor.append(self.lattice[0, n_j])
+                    # Deciding whether to flip or not
+                    flip_energy = self.E_flip((n_i, n_j),
+                                              spin_ij,
+                                              np.array(spin_neighbor))
+                    if self.flip_decider(flip_energy):
+                        self.lattice[n_i, n_j] *= -1
+        else:
+            raise Exception('`BC` can get values of `OBC` or `PBC`.')
 
     def magnetization(
         self,
-        n: int = 1
+        n: int = 1,
+        BC: str = 'PBC'
     ) -> float:
         """Return the average magnetization of the lattice over `n`
         sweeps.
@@ -156,10 +206,10 @@ class MonteCarlo:
         """
         n = int(n)
         if n < 1:
-            raise Exception('\'n\' should be a positive integer larger \
-                than 0.')
+            raise Exception(
+                '\'n\' should be a positive integer larger than 0.')
         M = 0
         for _ in range(n):
-            self.sweep()
+            self.sweep(BC)
             M += self.summary()[2]
         return M / n
