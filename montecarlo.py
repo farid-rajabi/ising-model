@@ -21,12 +21,12 @@ class MonteCarlo:
     k_B : int or float, default=1
         Boltzman's constant.
     T : int or float, default=0
-        Temperature of the system.
+        The temperature of the system.
 
     Attributes
     ----------
     dimen : tuple of [int, int]
-        Shape of the lattice.
+        The shape of the lattice.
     """
 
     def __init__(
@@ -200,17 +200,17 @@ class MonteCarlo:
                     # Left neighbor
                     spin_neighbor.append(self.lattice[n_i, n_j-1])
                     # Right neighbor
-                    try:
-                        spin_neighbor.append(self.lattice[n_i, n_j+1])
-                    except:
+                    if n_j == (self.dimen[1] - 1):
                         spin_neighbor.append(self.lattice[n_i, 0])
+                    else:
+                        spin_neighbor.append(self.lattice[n_i, n_j+1])
                     # Up neighbor
                     spin_neighbor.append(self.lattice[n_i-1, n_j])
                     # Down neighbor
-                    try:
-                        spin_neighbor.append(self.lattice[n_i+1, n_j])
-                    except:
+                    if n_i == (self.dimen[0] - 1):
                         spin_neighbor.append(self.lattice[0, n_j])
+                    else:
+                        spin_neighbor.append(self.lattice[n_i+1, n_j])
                     # Deciding whether to flip or not
                     flip_energy = self.E_flip((n_i, n_j),
                                               spin_ij,
@@ -222,6 +222,7 @@ class MonteCarlo:
 
     def magnetization(
         self,
+        T: (int | float),
         n: int = 1,
         BC: str = 'PBC'
     ) -> float:
@@ -230,6 +231,8 @@ class MonteCarlo:
 
         Parameters
         ----------
+        T : int or float
+            The temperature of the system.
         n : int, default=1
             The number of the repetition of the sweep.
         BC : str default=`PBC`
@@ -246,6 +249,7 @@ class MonteCarlo:
         Exception
             The number of sweeps cannot be less than 1.
         """
+        self.T = T
         n = int(n)
         if n < 1:
             raise Exception(
