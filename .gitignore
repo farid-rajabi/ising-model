@@ -1,5 +1,4 @@
-photos
 .ipynb_checkpoints
-outputs/.ipynb_checkpoints
-.vscode/settings.json
+.vscode
 __pycache__
+outputs/.ipynb_checkpoints
