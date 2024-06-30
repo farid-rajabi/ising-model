@@ -1,3 +1,4 @@
+import multiprocessing
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -15,9 +16,9 @@ class MonteCarlo:
     lattice : ndarray
         An array representing the spin in each site.
     J : int or float or ndarray, default=1
-        # TODO: find the name.
+        The exchange energy.
     epsilon : int or float, default=0
-        # TODO: find the name.
+        The magnetic field exerted on the system.
     k_B : int or float, default=1
         Boltzman's constant.
     T : int or float, default=0
@@ -90,7 +91,8 @@ class MonteCarlo:
         ----------
         coord : tuple of [int, int]
             The coordinates of the site for which the flip energy will be
-            calculated.
+            calculated. As a default, it is not used, but can be useful
+            when the function is overridden.
         site_spin : int or float
             The spin of the site for which E_flip is being calculated.
         neighbor_spin : ndarray
@@ -220,7 +222,7 @@ class MonteCarlo:
         else:
             raise Exception('`BC` can get values of `OBC` or `PBC`.')
 
-    def magnetization(
+    def magnetization_Ns(
         self,
         T: (int | float),
         n: int = 1,
@@ -259,3 +261,35 @@ class MonteCarlo:
             self.sweep(BC)
             M += self.summary()[2]
         return M / n
+
+    def magnetization_Ts(
+        self,
+        Ts: (list | np.ndarray),
+        n: int,
+        BC: str
+    ) -> list:
+        """Return the average magnetization of the lattice over `n`
+        sweeps for each temperature in `Ts`.
+
+        Parameters
+        ----------
+        Ts : array_like or ndarray
+            The temperatures of the system.
+        n : int
+            The number of sweeps for each temperature. It should be >= 1.
+        BC : str
+            The boundary condition used for assigning the neighboring
+            sites. It can be `OBC` or `PBC`.
+
+        Returns
+        -------
+        list
+            The average value of the magnetization in all of the given
+            temperatures.
+        """
+        pool = multiprocessing.Pool(processes=len(Ts))
+        args = zip(Ts,
+                   len(Ts) * [n],
+                   len(Ts) * [BC])
+        M_T = pool.starmap(func=self.magnetization_Ns, iterable=args)
+        return M_T
