@@ -61,7 +61,7 @@ $$
 
 where $E_n$ is one of the eigenvalues of the Hamiltonian matrix, $k_B$ is Boltzman's constant, and $T$ is the temperature of the system.
 
-> [!NOTE]
+> [!TIP]
 > The system might have numerous eigenvalues with large positive amounts. Consequently, their participation in the partition function will be negligible. They can be, therefore, omitted to reduce the runtime.
 
 The Helmholtz energy of the system, $F$, can be calculated as it is shown below.
@@ -91,8 +91,6 @@ Finally, the total magnetization at the arbitrary temperature $T$ is
 $$
     M = - \left. \frac{\partial F}{\partial \epsilon} \right|_ T = \lim_{\delta \epsilon \rightarrow 0} \frac{F_\epsilon - F_{\epsilon + \delta \epsilon}}{\delta \epsilon}.
 $$
-
-## Results
 
 ## References
 
